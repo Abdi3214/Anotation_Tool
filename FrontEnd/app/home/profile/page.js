@@ -144,9 +144,7 @@ export default function Profile() {
 
         {/* Buttons */}
         <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-3 sm:space-y-0 mt-6">
-          <button className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition">
-            Edit Profile
-          </button>
+          
           <button
             onClick={() => setShowChangePasswordForm((prev) => !prev)}
             className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition"
