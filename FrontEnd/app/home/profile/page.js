@@ -1,75 +1,58 @@
-"use client";
+'use client';
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useStore } from "../../../context/UserContext";
 import ChangePasswordForm from "./changePasswordForm";
 
 export default function Profile() {
   const router = useRouter();
+  const { user } = useStore();
   const [annotations, setAnnotations] = useState([]);
   const [completedAnnotations, setCompletedAnnotations] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const { user } = useStore();
   const [pendingReviews, setPendingReviews] = useState(0);
+  const [loading, setLoading] = useState(true);
   const [showChangePasswordForm, setShowChangePasswordForm] = useState(false);
 
-  useEffect(() => {
-    const fetchPendingReviews = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) return;
-
-      try {
-        const res = await fetch(
-          "https://anotationtoolbackend-production.up.railway.app/api/annotation/pending",
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        const data = await res.json();
-        setPendingReviews(data.count);
-      } catch (err) {
-        console.error("Error fetching pending reviews:", err);
-        setPendingReviews(0);
-      }
-    };
-
-    fetchPendingReviews();
-  }, []);
+  const changePasswordRef = useRef(null);
 
   useEffect(() => {
-    const CountAnnotations = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        router.push("/login");
-        return;
-      }
+    const token = localStorage.getItem("token");
+    if (!token) {
+      router.push("/login");
+      return;
+    }
 
+    const fetchData = async () => {
       try {
-        const res = await fetch(
-          "https://anotationtoolbackend-production.up.railway.app/api/annotation/Allannotation",
-          {
+        const [pendingRes, annotationsRes] = await Promise.all([
+          fetch("https://anotationtoolbackend-production.up.railway.app/api/annotation/pending", {
             headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        if (res.status === 401 || res.status === 403) {
+          }),
+          fetch("https://anotationtoolbackend-production.up.railway.app/api/annotation/Allannotation", {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
+
+        if ([pendingRes.status, annotationsRes.status].includes(401)) {
           router.push("/login");
           return;
         }
 
-        const data = await res.json();
-        setAnnotations(data);
-        setCompletedAnnotations(data.length);
-      } catch (error) {
-        console.error("Error fetching annotations:", error);
-        setAnnotations([]);
-        setCompletedAnnotations(0);
+        const pendingData = await pendingRes.json();
+        const annotationsData = await annotationsRes.json();
+
+        setPendingReviews(pendingData.count || 0);
+        setAnnotations(annotationsData);
+        setCompletedAnnotations(annotationsData.length || 0);
+      } catch (err) {
+        console.error("Error loading profile data:", err);
       } finally {
         setLoading(false);
       }
     };
 
-    CountAnnotations();
-  }, []);
+    fetchData();
+  }, [router]);
 
   const formattedDate = user?.createdAt
     ? new Date(user.createdAt).toLocaleDateString("en-US", {
@@ -80,17 +63,26 @@ export default function Profile() {
     : "N/A";
 
   const progressPercentage =
-    completedAnnotations > 0
+    completedAnnotations + pendingReviews > 0
       ? Math.round(
           (completedAnnotations / (completedAnnotations + pendingReviews)) * 100
         )
       : 0;
 
-  if (!user) {
+  const handleChangePasswordToggle = () => {
+    setShowChangePasswordForm((prev) => !prev);
+    setTimeout(() => {
+      if (!showChangePasswordForm && changePasswordRef.current) {
+        changePasswordRef.current.scrollIntoView({ behavior: "smooth" });
+      }
+    }, 100);
+  };
+
+  if (loading) {
     return (
-      <div className="animate-pulse p-6 bg-white dark:bg-[#0a0a0a] max-w-full mx-auto">
-        {/* Skeleton UI */}
-        {/* ... (keep your loading UI as is) */}
+      <div className="flex items-center justify-center min-h-[60vh] text-gray-700 dark:text-gray-300">
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-blue-600" />
+        <span className="ml-4">Loading your profile...</span>
       </div>
     );
   }
@@ -132,21 +124,10 @@ export default function Profile() {
           </p>
         </div>
 
-        {/* Recent Activity */}
-        <div>
-          <h3 className="font-semibold mb-2">Recent Activity</h3>
-          <ul className="space-y-1 text-sm">
-            <li><strong>April 16:</strong> Annotated Text ID 2374</li>
-            <li><strong>April 15:</strong> Commented on ID 2369</li>
-            <li><strong>April 13:</strong> Reviewed 5 texts</li>
-          </ul>
-        </div>
-
-        {/* Buttons */}
+        {/* Change Password Button */}
         <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-3 sm:space-y-0 mt-6">
-          
           <button
-            onClick={() => setShowChangePasswordForm((prev) => !prev)}
+            onClick={handleChangePasswordToggle}
             className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition"
           >
             {showChangePasswordForm ? "Cancel" : "Change Password"}
@@ -155,7 +136,7 @@ export default function Profile() {
 
         {/* Show Change Password Form */}
         {showChangePasswordForm && (
-          <div className="mt-6">
+          <div ref={changePasswordRef} className="mt-6">
             <ChangePasswordForm />
           </div>
         )}

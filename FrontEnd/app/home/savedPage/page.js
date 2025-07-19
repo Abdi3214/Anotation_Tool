@@ -4,17 +4,19 @@ import { useRouter } from "next/navigation";
 import { Trash } from "phosphor-react";
 import { useEffect, useState } from "react";
 import { useStore } from "../../../context/UserContext";
+
 export default function SavedAnnotations() {
   const [annotations, setAnnotations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState(null);
+  const [deletingAll, setDeletingAll] = useState(false);
+
   const router = useRouter();
   const { setPendingReviews, setCompletedAnnotations } = useStore();
+
   const fetchAnnotations = async () => {
     const token = localStorage.getItem("token");
-    if (!token) {
-      router.push("/login");
-      return;
-    }
+    if (!token) return router.push("/login");
 
     try {
       const res = await fetch(
@@ -23,20 +25,12 @@ export default function SavedAnnotations() {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        console.error(`Fetch failed: ${res.status} - ${errorText}`);
-        setAnnotations([]);
-        setCompletedAnnotations(0);
-        return;
-      }
-
+      if (!res.ok) throw new Error(`Error: ${res.statusText}`);
       const data = await res.json();
       setAnnotations(data);
       setCompletedAnnotations(data.length);
-    } catch (error) {
-      console.error("Error fetching annotations:", error);
+    } catch (err) {
+      console.error("Fetch annotations failed:", err);
       setAnnotations([]);
       setCompletedAnnotations(0);
     } finally {
@@ -51,20 +45,14 @@ export default function SavedAnnotations() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     const user = localStorage.getItem("user");
-
-    if (!token || !user) {
-      router.push("/login");
-    }
+    if (!token || !user) router.push("/login");
   }, [router]);
 
   const handleDeleteAll = async () => {
-    const confirmed = confirm(
-      "Are you sure you want to delete all annotations?"
-    );
-    if (!confirmed) return;
-
+    if (!confirm("Delete all annotations? This action cannot be undone.")) return;
     const token = localStorage.getItem("token");
     try {
+      setDeletingAll(true);
       const res = await fetch(
         "https://anotationtoolbackend-production.up.railway.app/api/annotation/deleteAll",
         {
@@ -72,29 +60,22 @@ export default function SavedAnnotations() {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        console.error(`Delete failed: ${res.status} - ${errorText}`);
-        alert("Failed to delete annotations.");
-        return;
-      }
-
+      if (!res.ok) throw new Error("Failed to delete all.");
       fetchAnnotations();
-    } catch (error) {
-      console.error("Error deleting annotations:", error);
-      alert("An unexpected error occurred. Please try again later.");
+    } catch (err) {
+      alert("Could not delete all annotations.");
+      console.error(err);
+    } finally {
+      setDeletingAll(false);
     }
   };
 
   const handleDelete = async (id) => {
-    const confirmed = confirm(
-      "Are you sure you want to delete this annotation?"
-    );
-    if (!confirmed) return;
-
+    if (!confirm("Are you sure you want to delete this annotation?")) return;
     const token = localStorage.getItem("token");
+
     try {
+      setDeletingId(id);
       const res = await fetch(
         `https://anotationtoolbackend-production.up.railway.app/api/annotation/rebortAnnotationDelete/${id}`,
         {
@@ -102,18 +83,13 @@ export default function SavedAnnotations() {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        console.error(`Delete failed: ${res.status} - ${errorText}`);
-        alert("Failed to delete annotation.");
-        return;
-      }
-
+      if (!res.ok) throw new Error("Failed to delete annotation.");
       fetchAnnotations();
-    } catch (error) {
-      console.error("Error deleting annotation:", error);
-      alert("An unexpected error occurred. Please try again later.");
+    } catch (err) {
+      alert("Failed to delete this annotation.");
+      console.error(err);
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -128,20 +104,23 @@ export default function SavedAnnotations() {
 
   return (
     <div className="p-4 max-w-7xl mx-auto w-full">
-      {/* Delete Button */}
+      {/* Delete All Button */}
       <div className="flex justify-end mb-4">
         {!loading && annotations.length > 0 && (
           <button
             onClick={handleDeleteAll}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md shadow transition text-sm sm:text-base"
+            disabled={deletingAll}
+            className={`${
+              deletingAll ? "bg-red-400 cursor-not-allowed" : "bg-red-600 hover:bg-red-700"
+            } text-white px-4 py-2 rounded-md shadow text-sm sm:text-base transition`}
           >
-            Delete All
+            {deletingAll ? "Deleting..." : "Delete All"}
           </button>
         )}
       </div>
 
       {/* Annotation List */}
-      <div className="space-y-4 h-[calc(100vh-150px)] overflow-auto p-2 bg-white dark:bg-[#0a0a0a] rounded-md shadow-inner">
+      <div className="space-y-4 h-[calc(100vh-160px)] overflow-auto p-2 bg-white dark:bg-[#0a0a0a] rounded-md shadow-inner">
         {loading ? (
           Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)
         ) : annotations.length > 0 ? (
@@ -164,7 +143,9 @@ export default function SavedAnnotations() {
                 </div>
               </div>
               <Trash
-                className="cursor-pointer hover:scale-105 transition self-end sm:self-auto"
+                className={`cursor-pointer transition hover:scale-110 ${
+                  deletingId === item._id ? "opacity-50 pointer-events-none" : ""
+                }`}
                 onClick={() => handleDelete(item._id)}
                 size={24}
                 color="#ff0000"
@@ -172,9 +153,10 @@ export default function SavedAnnotations() {
             </div>
           ))
         ) : (
-          <p className="text-gray-500 dark:text-gray-400 text-center mt-12">
-            No saved annotations.
-          </p>
+          <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+            <p className="text-lg">You don’t have any saved annotations.</p>
+            <p className="text-sm mt-2">Annotations you complete will appear here.</p>
+          </div>
         )}
       </div>
     </div>
