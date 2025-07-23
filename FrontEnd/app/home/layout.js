@@ -31,17 +31,19 @@ export default function HomeLayout({ children }) {
   };
 
   useEffect(() => {
-    if (!user) return;
+    const currentUser = user || JSON.parse(localStorage.getItem("user"));
 
-    if (user?.userType) {
-      setRole(user.userType);
-
-      const adminOnlyRoutes = ["/home/dashboard", "/home/export", "/home/users"];
-      if (user.userType !== "Admin" && adminOnlyRoutes.includes(pathname)) {
-        router.push("/home/annotation");
-      }
-    } else {
+    if (!currentUser) {
       router.push("/login");
+      return;
+    }
+
+    const currentRole = currentUser.userType;
+    setRole(currentRole);
+
+    const adminOnlyRoutes = ["/home/dashboard", "/home/export", "/home/users"];
+    if (currentRole !== "Admin" && adminOnlyRoutes.includes(pathname)) {
+      router.push("/home/annotation");
     }
   }, [user, pathname]);
 
@@ -71,7 +73,9 @@ export default function HomeLayout({ children }) {
                   <Link
                     href="/home/dashboard"
                     className={`text-gray-700 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 font-medium ${
-                      isActive("/home/dashboard") ? "underline font-semibold" : ""
+                      isActive("/home/dashboard")
+                        ? "underline font-semibold"
+                        : ""
                     }`}
                   >
                     Dashboard
@@ -125,7 +129,9 @@ export default function HomeLayout({ children }) {
                     title="Dashboard"
                   >
                     <LayoutDashboard />
-                    <span className="ml-3 hidden md:inline text-xl">Dashboard</span>
+                    <span className="ml-3 hidden md:inline text-xl">
+                      Dashboard
+                    </span>
                   </Link>
 
                   <Link

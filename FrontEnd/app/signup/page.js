@@ -1,32 +1,48 @@
-'use client';
-import Image from 'next/image';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import logo from '../../public/logo.webp';
+"use client";
+import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import logo from "../../public/logo.webp";
+
 const SignUp = () => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
   const router = useRouter();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setMessage("");
+    setError("");
 
-    setMessage('');
-    setError('');
-
-    // Client-side validation
-    if (name.trim() === '' || email.trim() === '' || password.trim() === '') {
-      setError('All fields are required.');
+    // Validation
+    if (!name || !email || !password) {
+      setError("All fields are required.");
       return;
     }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters long.');
+    const nameRegex = /^[A-Za-z\s]+$/;
+    if (!nameRegex.test(name)) {
+      setError("Name should contain only letters and spaces.");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!passwordRegex.test(password)) {
+      setError(
+        "Password must be at least 8 characters and include uppercase, lowercase, number, and special character."
+      );
       return;
     }
 
@@ -35,53 +51,60 @@ const SignUp = () => {
     try {
       setLoading(true);
 
-      const res = await fetch("https://anotationtoolbackend-production.up.railway.app/api/users/addUsers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      });
+      // Register
+      const res = await fetch(
+        "https://anotationtoolbackend-production.up.railway.app/api/users/addUsers",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        }
+      );
 
       if (!res.ok) {
         const text = await res.text();
         if (res.status === 409) {
-          setError("This user already exists. Please try another.");
+          setError("This user already exists.");
         } else {
-          setError(`Sign up failed: ${res.statusText}`);
+          setError(`Signup failed: ${text}`);
         }
-        setLoading(false);
         return;
       }
 
-      const loginRes = await fetch("https://anotationtoolbackend-production.up.railway.app/api/users/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
-      });
+      // Login
+      const loginRes = await fetch(
+        "https://anotationtoolbackend-production.up.railway.app/api/users/login",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        }
+      );
 
       if (!loginRes.ok) {
         const err = await loginRes.json();
-        throw new Error(err.error || 'Login after register failed');
+        throw new Error(err.error || "Login after register failed");
       }
 
       const { token, user } = await loginRes.json();
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
 
-      setMessage('Account created successfully! Redirecting...');
+      // Store securely
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
+
+      setMessage("Account created successfully! Redirecting...");
 
       setTimeout(() => {
-        if (user.userType === 'Admin') {
-          router.push(`/home/dashboard?name=${encodeURIComponent(name)}`);
-        } else if (user.userType === 'annotator') {
-          router.push("/home/annotation");
+        const role = user?.userType?.toLowerCase() || "annotator";
+        if (role === "admin") {
+          router.push("/home/dashboard");
         } else {
-          setError("Unknown user role.");
+          router.push("/home/annotation");
         }
       }, 1500);
-
     } catch (err) {
-      setError("Something went wrong. Please try again.");
       console.error(err);
+      setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -91,11 +114,8 @@ const SignUp = () => {
     <div className="flex justify-center items-center min-h-screen bg-gray-50 dark:bg-[#0a0a0a] px-4">
       <div className="w-full max-w-md p-6 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 shadow-md">
         <form onSubmit={handleSubmit} className="flex flex-col space-y-5">
-          <Image className="w-12 h-12 rounded-3xl mx-auto" src={logo} alt="Logo" />
-
-          <h1 className="text-2xl font-semibold text-center text-gray-800 dark:text-white">
-            Sign Up to your account
-          </h1>
+          <Image src={logo} alt="Logo" className="w-12 h-12 rounded-3xl mx-auto" />
+          <h1 className="text-2xl font-semibold text-center text-gray-800 dark:text-white">Sign Up</h1>
 
           {message && <p className="text-center text-green-600 dark:text-green-400">{message}</p>}
           {error && <p className="text-center text-red-600 dark:text-red-400">{error}</p>}
@@ -107,6 +127,8 @@ const SignUp = () => {
               type="text"
               required
               onChange={(e) => setName(e.target.value)}
+              pattern="[A-Za-z\s]+"
+              title="Only letters and spaces allowed"
               className="mt-1 w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -117,6 +139,8 @@ const SignUp = () => {
               id="email"
               type="email"
               required
+              pattern="[^@\s]+@[^@\s]+\.[^@\s]+"
+              title="Please enter a valid email address"
               onChange={(e) => setEmail(e.target.value)}
               className="mt-1 w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
@@ -133,20 +157,14 @@ const SignUp = () => {
             />
           </div>
 
-          {/* <div className="flex justify-between items-center text-sm text-gray-600 dark:text-gray-400">
-            <Link href="/" className="text-blue-600 dark:text-blue-400 hover:underline">
-              Forgot password?
-            </Link>
-          </div> */}
-
           <button
             type="submit"
             disabled={loading}
             className={`w-full ${
-              loading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-700 hover:bg-blue-600'
+              loading ? "bg-blue-400 cursor-not-allowed" : "bg-blue-700 hover:bg-blue-600"
             } text-white font-semibold py-2 rounded-lg transition`}
           >
-            {loading ? 'Signing Up...' : 'Sign Up'}
+            {loading ? "Signing Up..." : "Sign Up"}
           </button>
 
           <Link href="/login" className="text-center text-sm text-blue-700 dark:text-blue-400 hover:underline">
