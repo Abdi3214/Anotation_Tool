@@ -35,7 +35,7 @@ const SignUp = () => {
     try {
       setLoading(true);
 
-      const res = await fetch("http://localhost:5000/api/users/addUsers", {
+      const res = await fetch("https://anotationtoolbackend-production.up.railway.app/api/users/addUsers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data)
@@ -52,7 +52,7 @@ const SignUp = () => {
         return;
       }
 
-      const loginRes = await fetch("http://localhost:5000/api/users/login", {
+      const loginRes = await fetch("https://anotationtoolbackend-production.up.railway.app/api/users/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
