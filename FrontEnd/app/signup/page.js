@@ -1,4 +1,5 @@
 "use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -9,9 +10,11 @@ const SignUp = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [useStrongPassword, setUseStrongPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+
   const router = useRouter();
 
   const handleSubmit = async (e) => {
@@ -37,11 +40,17 @@ const SignUp = () => {
       return;
     }
 
-    const passwordRegex =
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-    if (!passwordRegex.test(password)) {
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters.");
+      return;
+    }
+
+    const strongPasswordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/;
+
+    if (useStrongPassword && !strongPasswordRegex.test(password)) {
       setError(
-        "Password must be at least 8 characters and include uppercase, lowercase, number, and special character."
+        "Strong password must include uppercase, lowercase, number, and special character."
       );
       return;
     }
@@ -114,14 +123,33 @@ const SignUp = () => {
     <div className="flex justify-center items-center min-h-screen bg-gray-50 dark:bg-[#0a0a0a] px-4">
       <div className="w-full max-w-md p-6 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 shadow-md">
         <form onSubmit={handleSubmit} className="flex flex-col space-y-5">
-          <Image src={logo} alt="Logo" className="w-12 h-12 rounded-3xl mx-auto" />
-          <h1 className="text-2xl font-semibold text-center text-gray-800 dark:text-white">Sign Up</h1>
+          <Image
+            src={logo}
+            alt="Logo"
+            className="w-12 h-12 rounded-3xl mx-auto"
+          />
+          <h1 className="text-2xl font-semibold text-center text-gray-800 dark:text-white">
+            Sign Up
+          </h1>
 
-          {message && <p className="text-center text-green-600 dark:text-green-400">{message}</p>}
-          {error && <p className="text-center text-red-600 dark:text-red-400">{error}</p>}
+          {message && (
+            <p className="text-center text-green-600 dark:text-green-400">
+              {message}
+            </p>
+          )}
+          {error && (
+            <p className="text-center text-red-600 dark:text-red-400">
+              {error}
+            </p>
+          )}
 
           <div>
-            <label htmlFor="name" className="text-sm text-gray-600 dark:text-gray-300">Full Name</label>
+            <label
+              htmlFor="name"
+              className="text-sm text-gray-600 dark:text-gray-300"
+            >
+              Full Name
+            </label>
             <input
               id="name"
               type="text"
@@ -134,7 +162,12 @@ const SignUp = () => {
           </div>
 
           <div>
-            <label htmlFor="email" className="text-sm text-gray-600 dark:text-gray-300">Email Address</label>
+            <label
+              htmlFor="email"
+              className="text-sm text-gray-600 dark:text-gray-300"
+            >
+              Email Address
+            </label>
             <input
               id="email"
               type="email"
@@ -147,27 +180,52 @@ const SignUp = () => {
           </div>
 
           <div>
-            <label htmlFor="password" className="text-sm text-gray-600 dark:text-gray-300">Password</label>
+            <label
+              htmlFor="password"
+              className="text-sm text-gray-600 dark:text-gray-300"
+            >
+              Password
+            </label>
             <input
               id="password"
               type="password"
               required
+              minLength={8}
               onChange={(e) => setPassword(e.target.value)}
               className="mt-1 w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+            <div className="mt-2 flex items-center space-x-2">
+              <input
+                id="strongPassword"
+                type="checkbox"
+                checked={useStrongPassword}
+                onChange={() => setUseStrongPassword(!useStrongPassword)}
+              />
+              <label
+                htmlFor="strongPassword"
+                className="text-sm text-gray-600 dark:text-gray-300"
+              >
+                Use strong password pattern
+              </label>
+            </div>
           </div>
 
           <button
             type="submit"
             disabled={loading}
             className={`w-full ${
-              loading ? "bg-blue-400 cursor-not-allowed" : "bg-blue-700 hover:bg-blue-600"
+              loading
+                ? "bg-blue-400 cursor-not-allowed"
+                : "bg-blue-700 hover:bg-blue-600"
             } text-white font-semibold py-2 rounded-lg transition`}
           >
             {loading ? "Signing Up..." : "Sign Up"}
           </button>
 
-          <Link href="/login" className="text-center text-sm text-blue-700 dark:text-blue-400 hover:underline">
+          <Link
+            href="/login"
+            className="text-center text-sm text-blue-700 dark:text-blue-400 hover:underline"
+          >
             Already have an account?
           </Link>
         </form>
