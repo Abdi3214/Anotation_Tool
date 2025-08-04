@@ -5,7 +5,7 @@ const jwt = require("jsonwebtoken");
 const router = express.Router();
 const bcrypt = require("bcryptjs");
 const { authenticateToken, authorizeRoles } = require("./auth")
-
+require('dotenv').config();
 router.get('/usersAll',
   authenticateToken,
   authorizeRoles('Admin'),
