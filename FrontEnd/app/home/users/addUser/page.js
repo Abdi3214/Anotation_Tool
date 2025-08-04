@@ -20,7 +20,7 @@ function AddUser() {
       email,
       password,
     };
-    const res = await fetch(`https://anotationtoolbackend-production.up.railway.app/api/users/addUsers`, {
+    const res = await fetch(`https://anotationtool-production.up.railway.app/api/users/addUsers`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),

@@ -25,10 +25,10 @@ export default function Profile() {
     const fetchData = async () => {
       try {
         const [pendingRes, annotationsRes] = await Promise.all([
-          fetch("https://anotationtoolbackend-production.up.railway.app/api/annotation/pending", {
+          fetch("https://anotationtool-production.up.railway.app/api/annotation/pending", {
             headers: { Authorization: `Bearer ${token}` },
           }),
-          fetch("https://anotationtoolbackend-production.up.railway.app/api/annotation/Allannotation", {
+          fetch("https://anotationtool-production.up.railway.app/api/annotation/Allannotation", {
             headers: { Authorization: `Bearer ${token}` },
           }),
         ]);

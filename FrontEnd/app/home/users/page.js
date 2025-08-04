@@ -32,7 +32,7 @@ export default function Users() {
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(
-        "http://localhost:5000/api/users/usersAll",
+        "https://anotationtool-production.up.railway.app/api/users/usersAll",
         {
           method: "GET",
           headers: {
@@ -78,7 +78,7 @@ export default function Users() {
       return;
     try {
       const res = await fetch(
-        `http://localhost:5000/api/users/deleteUser/${id}`,
+        `https://anotationtool-production.up.railway.app/api/users/deleteUser/${id}`,
         {
           method: "DELETE",
         }

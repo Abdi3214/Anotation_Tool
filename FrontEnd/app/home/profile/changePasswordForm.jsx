@@ -20,7 +20,7 @@ export default function ChangePasswordForm() {
       setLoading(true);
       const token = localStorage.getItem("token");
       const res = await fetch(
-        "https://anotationtoolbackend-production.up.railway.app/api/users/change-password",
+        "https://anotationtool-production.up.railway.app/api/users/change-password",
         {
           method: "POST",
           headers: {
