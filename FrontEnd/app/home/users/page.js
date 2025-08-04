@@ -74,6 +74,8 @@ export default function Users() {
     }
   }, [users]);
   const handleDelete = async (id) => {
+    if (!confirm("Delete all annotations? This action cannot be undone."))
+      return;
     try {
       const res = await fetch(
         `http://localhost:5000/api/users/deleteUser/${id}`,
