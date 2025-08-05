@@ -7,4 +7,3 @@ const TranslationSchema = new mongoose.Schema({
 }, { collection: 'translations' });
 
 module.exports = mongoose.model('Translation', TranslationSchema);
-a
