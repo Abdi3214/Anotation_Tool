@@ -89,7 +89,6 @@ router.post("/login", async (req, res) => {
       console.error("JWT_SECRET missing");
       return res.status(500).json({ error: "Internal server error" });
     }
-
     const token = jwt.sign(
       {
         Annotator_ID: user.Annotator_ID,

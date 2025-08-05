@@ -97,7 +97,9 @@ const Annotation = () => {
   useEffect(() => {
     const fetchItems = async () => {
       try {
-        const res = await fetch("https://anotationtool-production.up.railway.app/api/data/annotation");
+        const res = await fetch(
+          "https://anotationtool-production.up.railway.app/api/data/annotation"
+        );
         if (!res.ok) throw new Error("Network error");
 
         const data = await res.json();
@@ -142,11 +144,14 @@ const Annotation = () => {
       const token = localStorage.getItem("token");
 
       try {
-        const res = await fetch("https://anotationtool-production.up.railway.app/api/progress", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const res = await fetch(
+          "https://anotationtool-production.up.railway.app/api/progress",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
         const data = await res.json();
         if (data.index !== undefined && !isNaN(data.index)) {
@@ -262,14 +267,17 @@ const Annotation = () => {
         setCurrentIndex(next);
 
         // 7) Persist progress to backend
-        await fetch("https://anotationtool-production.up.railway.app/api/progress", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ index: next }),
-        });
+        await fetch(
+          "https://anotationtool-production.up.railway.app/api/progress",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ index: next }),
+          }
+        );
       } else {
         alert("🎉 You've completed all annotations!");
       }
@@ -304,14 +312,17 @@ const Annotation = () => {
         return;
       }
 
-      const res = await fetch("https://anotationtool-production.up.railway.app/api/annotation/skip", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ Src_Text }),
-      });
+      const res = await fetch(
+        "https://anotationtool-production.up.railway.app/api/annotation/skip",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ Src_Text }),
+        }
+      );
 
       if (!res.ok) {
         const text = await res.text();
@@ -330,14 +341,17 @@ const Annotation = () => {
       if (next !== null) {
         setCurrentIndex(next);
 
-        const progressRes = await fetch("https://anotationtool-production.up.railway.app/api/progress", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ index: next }),
-        });
+        const progressRes = await fetch(
+          "https://anotationtool-production.up.railway.app/api/progress",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ index: next }),
+          }
+        );
 
         if (!progressRes.ok) {
           console.warn("Failed to save skip progress.");
@@ -968,10 +982,10 @@ const Annotation = () => {
           </p>
 
           {/* Meaning Slider */}
-          <div className="w-full px-4 sm:px-6 lg:px-8 py-4 space-y-4">
+          <div className="w-full px-4 sm:px-6 lg:px-8 py-4 space-y-6">
             {/* Slider Section */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 font-semibold">
-              <span className="text-sm sm:text-base text-center sm:text-left mb-2 sm:mb-0">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 font-semibold gap-2 sm:gap-0">
+              <span className="text-sm sm:text-base text-center sm:text-left">
                 strongly disagree
               </span>
 
@@ -986,27 +1000,36 @@ const Annotation = () => {
                   onChange={handleChange}
                   className="range range-primary w-full dark:range-secondary"
                 />
+
                 <div className="absolute left-0 right-0 top-6 flex justify-between text-[10px] sm:text-xs text-gray-400 px-1">
                   <span
                     className="tooltip tooltip-open tooltip-bottom"
                     data-tip="Nonsense/No meaning preserved"
-                  />
+                  >
+                    |
+                  </span>
                   <span
                     className="tooltip tooltip-open tooltip-bottom"
                     data-tip="Some meaning preserved"
-                  />
+                  >
+                    |
+                  </span>
                   <span
                     className="tooltip tooltip-open tooltip-bottom"
                     data-tip="Most meaning preserved"
-                  />
+                  >
+                    |
+                  </span>
                   <span
                     className="tooltip tooltip-open tooltip-bottom"
                     data-tip="Perfect meaning"
-                  />
+                  >
+                    |
+                  </span>
                 </div>
               </div>
 
-              <span className="text-sm sm:text-base text-center sm:text-right mt-2 sm:mt-0">
+              <span className="text-sm sm:text-base text-center sm:text-right">
                 strongly agree
               </span>
             </div>
@@ -1015,7 +1038,7 @@ const Annotation = () => {
             <textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow rounded p-2 mt-10 text-sm sm:text-base resize-none"
+              className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow rounded p-2 text-sm sm:text-base resize-none"
               placeholder="Please write any comment about the highlighted errors or annotation"
               rows={4}
             />
