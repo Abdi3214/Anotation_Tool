@@ -96,7 +96,7 @@ router.post("/login", async (req, res) => {
         userType: user.userType,
       },
       process.env.JWT_SECRET,
-      { expiresIn: "1d" }
+      { expiresIn: "7d" }
     );
 
     const userData = {
