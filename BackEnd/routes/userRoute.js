@@ -4,7 +4,7 @@ const Users = require("../models/usersModel");
 const jwt = require("jsonwebtoken");
 const router = express.Router();
 const bcrypt = require("bcryptjs");
-const { authenticateToken, authorizeRoles } = require("./auth")
+const { authenticateToken, authorizeRoles } = require("../utils/auth")
 require('dotenv').config();
 router.get('/usersAll',
   authenticateToken,
