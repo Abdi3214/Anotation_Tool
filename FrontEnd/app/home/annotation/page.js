@@ -77,29 +77,23 @@ const Annotation = () => {
           {
             headers: {
               Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
             },
           }
         );
-
         if (!res.ok) {
-          console.error("FetchSaved HTTP error:", res.status, res.statusText);
-          console.error("Body:", await res.text()); // log HTML error
+          console.error("HTTP Error:", res.status, res.statusText);
+          console.error(await res.text()); // Logs HTML
           return;
         }
-
         if (!res.headers.get("content-type")?.includes("application/json")) {
-          console.error("FetchSaved expected JSON but got HTML/text");
-          console.error(await res.text());
+          console.error("Expected JSON but got:", await res.text());
           return;
         }
-
         const saved = await res.json();
         if (!Array.isArray(saved)) {
           console.error("Expected an array but got:", saved);
           return;
         }
-
         const savedIdxs = saved
           .map((a) => items.findIndex((item) => item.sourceText === a.Src_Text))
           .filter((idx) => idx >= 0);
@@ -115,39 +109,21 @@ const Annotation = () => {
   useEffect(() => {
     const fetchItems = async () => {
       try {
-        const token = localStorage.getItem("token");
         const res = await fetch(
-          "https://anotationtool-production.up.railway.app/api/data/annotation",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`, // 🔹 Add auth if required
-              "Content-Type": "application/json",
-            },
-          }
+          "https://anotationtool-production.up.railway.app/api/data/annotation"
         );
-
-        if (!res.ok) {
-          console.error("FetchItems HTTP error:", res.status, res.statusText);
-          console.error("Body:", await res.text());
-          return;
-        }
-
-        if (!res.headers.get("content-type")?.includes("application/json")) {
-          console.error("FetchItems expected JSON but got HTML/text");
-          console.error(await res.text());
-          return;
-        }
+        if (!res.ok) throw new Error("Network error");
 
         const data = await res.json();
+
         const mapped = data.map((post) => ({
           id: post.id,
           sourceText: post.english,
           targetText: post.somali,
         }));
-
         console.log("Fetched items:", mapped);
         console.log("Saved startId:", localStorage.getItem("startId"));
-        setItems(mapped);
+        setItems(mapped); // ✅ Set first
       } catch (err) {
         console.error("Annotation fetch error:", err);
         setError(err);
@@ -158,7 +134,6 @@ const Annotation = () => {
 
     fetchItems();
   }, []);
-
   useEffect(() => {
     const savedSource = localStorage.getItem("startSrc");
     if (items.length > 0 && savedSource) {
