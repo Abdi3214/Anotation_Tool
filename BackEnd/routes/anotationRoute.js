@@ -95,7 +95,7 @@ router.get("/export", authenticateToken, async (req, res) => {
 // Get all annotations
 router.get("/Allannotation", authenticateToken, async (req, res) => {
   try {
-    console.log("🧪 Decoded user:", req.user); // <-- SEE what it contains
+    // <-- SEE what it contains
     const userId = req.user.Annotator_ID || req.user.userId || req.user.id;
     const annotations = await Annotation.find({ Annotator_ID: userId });
     res.status(200).json(annotations);

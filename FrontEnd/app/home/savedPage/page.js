@@ -37,7 +37,7 @@ const SavedPage = () => {
       if (!user?._id) throw new Error("Annotator ID missing");
 
       const res = await fetch(
-        `https://anotationtool-production.up.railway.app/api/annotation/assigned/${user._id}`,
+        `http://localhost:5000/api/annotation/assigned/${user._id}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -66,7 +66,7 @@ const SavedPage = () => {
     try {
       setDeletingAll(true);
       const res = await fetch(
-        "https://anotationtool-production.up.railway.app/api/annotation/deleteAll",
+        "http://localhost:5000/api/annotation/deleteAll",
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
