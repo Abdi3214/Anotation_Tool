@@ -9,6 +9,7 @@ const annotationSchema = new mongoose.Schema(
     Annotation_ID: { type: String, unique: true },
     Comment: { type: String },
     Src_Text: { type: String, required: true },
+    // Target_Text: { type: String, required: true },
     Src_lang: { type: String, default: 'English' },
     Target_lang: { type: String, default: 'Somali' },
     Score: { type: Number, default: 0 },

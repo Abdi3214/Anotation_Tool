@@ -43,8 +43,8 @@ export default function Dashboard({ name }) {
     })
       .then((res) => res.json())
       .then((data) => {
-        setTotalAnnotations(data.totalAnnotations);
-        setAnnotationsPerUser(data.annotationsPerUser);
+        setTotalAnnotations(data.total);
+        setAnnotationsPerUser(data.avgPerUser);
 
         const formatDate = (dateStr) => {
           const date = new Date(dateStr);
@@ -52,16 +52,16 @@ export default function Dashboard({ name }) {
         };
 
         setAnnotationsData(
-          data.annotationsByDay.map((item) => ({
+          (data.dailyAnnotations || []).map((item) => ({
             name: formatDate(item._id),
             value: item.count,
           }))
         );
 
         setErrorsData(
-          data.errorByDay.map((item) => ({
+          (data.errors || []).map((item) => ({
             name: formatDate(item._id),
-            value: item.value,
+            value: item.errorCount,
           }))
         );
 

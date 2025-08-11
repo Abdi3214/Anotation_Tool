@@ -73,7 +73,7 @@ const Annotation = () => {
       try {
         const token = localStorage.getItem("token");
         const res = await fetch(
-          `https://anotationtool-production.up.railway.app/api/annotation/Allannotation`,
+          `http://localhost:5000/api/annotation/Allannotation`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -100,7 +100,7 @@ const Annotation = () => {
   useEffect(() => {
     const fetchItems = async () => {
       try {
-        const res = await fetch("https://anotationtool-production.up.railway.app/api/data/annotation");
+        const res = await fetch("http://localhost:5000/api/data/annotation");
         if (!res.ok) throw new Error("Network error");
 
         const data = await res.json();
@@ -145,7 +145,7 @@ const Annotation = () => {
       const token = localStorage.getItem("token");
 
       try {
-        const res = await fetch("https://anotationtool-production.up.railway.app/api/progress", {
+        const res = await fetch("http://localhost:5000/api/progress", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -224,7 +224,7 @@ const Annotation = () => {
 
       // 2) Save annotation to backend
       const res = await fetch(
-        "https://anotationtool-production.up.railway.app/api/annotation/Addannotation",
+        "http://localhost:5000/api/annotation/Addannotation",
         {
           method: "POST",
           headers: {
@@ -265,7 +265,7 @@ const Annotation = () => {
         setCurrentIndex(next);
 
         // 7) Persist progress to backend
-        await fetch("https://anotationtool-production.up.railway.app/api/progress", {
+        await fetch("http://localhost:5000/api/progress", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -307,7 +307,7 @@ const Annotation = () => {
         return;
       }
 
-      const res = await fetch("https://anotationtool-production.up.railway.app/api/annotation/skip", {
+      const res = await fetch("http://localhost:5000/api/annotation/skip", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -333,7 +333,7 @@ const Annotation = () => {
       if (next !== null) {
         setCurrentIndex(next);
 
-        const progressRes = await fetch("https://anotationtool-production.up.railway.app/api/progress", {
+        const progressRes = await fetch("http://localhost:5000/api/progress", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -465,111 +465,111 @@ const Annotation = () => {
     setShowCategoryOptions(false);
   };
 
-  // const handleSelection = (
-  //   setSelections,
-  //   text,
-  //   category = null,
-  //   ref = null
-  // ) => {
-  //   try {
-  //     const selection = window.getSelection();
-  //     if (!selection || selection.rangeCount === 0) return;
+  const handleSelection = (
+    setSelections,
+    text,
+    category = null,
+    ref = null
+  ) => {
+    try {
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0) return;
 
-  //     const selectedText = selection.toString().trim();
-  //     if (!selectedText || !ref?.current?.textContent?.includes(selectedText)) {
-  //       selection.removeAllRanges();
-  //       return;
-  //     }
+      const selectedText = selection.toString().trim();
+      if (!selectedText || !ref?.current?.textContent?.includes(selectedText)) {
+        selection.removeAllRanges();
+        return;
+      }
 
-  //     // 1. Estimate selection start index using DOM range
-  //     const range = selection.getRangeAt(0);
-  //     const preRange = document.createRange();
-  //     preRange.selectNodeContents(ref.current);
-  //     preRange.setEnd(range.startContainer, range.startOffset);
-  //     const approxStart = preRange.toString().length;
+      // 1. Estimate selection start index using DOM range
+      const range = selection.getRangeAt(0);
+      const preRange = document.createRange();
+      preRange.selectNodeContents(ref.current);
+      preRange.setEnd(range.startContainer, range.startOffset);
+      const approxStart = preRange.toString().length;
 
-  //     // 2. Find all occurrences of the selected text
-  //     const content = ref.current.textContent;
-  //     const occurrences = [];
-  //     let idx = content.indexOf(selectedText);
-  //     while (idx !== -1) {
-  //       occurrences.push(idx);
-  //       idx = content.indexOf(selectedText, idx + 1);
-  //     }
+      // 2. Find all occurrences of the selected text
+      const content = ref.current.textContent;
+      const occurrences = [];
+      let idx = content.indexOf(selectedText);
+      while (idx !== -1) {
+        occurrences.push(idx);
+        idx = content.indexOf(selectedText, idx + 1);
+      }
 
-  //     // 3. Pick the closest match to where the user selected
-  //     if (occurrences.length === 0) {
-  //       selection.removeAllRanges();
-  //       return;
-  //     }
+      // 3. Pick the closest match to where the user selected
+      if (occurrences.length === 0) {
+        selection.removeAllRanges();
+        return;
+      }
 
-  //     const start = occurrences.reduce((prev, curr) =>
-  //       Math.abs(curr - approxStart) < Math.abs(prev - approxStart)
-  //         ? curr
-  //         : prev
-  //     );
-  //     const end = start + selectedText.length;
+      const start = occurrences.reduce((prev, curr) =>
+        Math.abs(curr - approxStart) < Math.abs(prev - approxStart)
+          ? curr
+          : prev
+      );
+      const end = start + selectedText.length;
 
-  //     if (start < 0 || end > content.length) {
-  //       selection.removeAllRanges();
-  //       return;
-  //     }
+      if (start < 0 || end > content.length) {
+        selection.removeAllRanges();
+        return;
+      }
 
-  //     // 4. Handle category menu (for target selections)
-  //     if (setSelections === setTargetSelections) {
-  //       setPendingTargetText(selectedText);
-  //       setShowCategoryOptions(true);
-  //       const rect = range.getBoundingClientRect();
-  //       setSelectionPosition({
-  //         top: rect.bottom + window.scrollY + 10,
-  //         left: rect.left + window.scrollX,
-  //       });
-  //       selection.removeAllRanges();
-  //       return;
-  //     }
+      // 4. Handle category menu (for target selections)
+      if (setSelections === setTargetSelections) {
+        setPendingTargetText(selectedText);
+        setShowCategoryOptions(true);
+        const rect = range.getBoundingClientRect();
+        setSelectionPosition({
+          top: rect.bottom + window.scrollY + 10,
+          left: rect.left + window.scrollX,
+        });
+        selection.removeAllRanges();
+        return;
+      }
 
-  //     // 5. Update selection state
-  //     setSelections((prev) => {
-  //       const isMistranslation = category === "Mistranslation";
+      // 5. Update selection state
+      setSelections((prev) => {
+        const isMistranslation = category === "Mistranslation";
 
-  //       // Deselect existing selection
-  //       const matchIndex = prev.findIndex(
-  //         (s) =>
-  //           s.start === start &&
-  //           s.end === end &&
-  //           s.text === selectedText &&
-  //           s.category === category
-  //       );
+        // Deselect existing selection
+        const matchIndex = prev.findIndex(
+          (s) =>
+            s.start === start &&
+            s.end === end &&
+            s.text === selectedText &&
+            s.category === category
+        );
 
-  //       if (matchIndex !== -1) {
-  //         if (isMistranslation) {
-  //           const linkedTargetText = prev[matchIndex].linkedTargetText;
-  //           setTargetSelections((targetPrev) =>
-  //             targetPrev.filter(
-  //               (t) =>
-  //                 t.text !== linkedTargetText || t.category !== "Mistranslation"
-  //             )
-  //           );
-  //         }
-  //         return prev.filter((_, i) => i !== matchIndex); // Deselect
-  //       }
+        if (matchIndex !== -1) {
+          if (isMistranslation) {
+            const linkedTargetText = prev[matchIndex].linkedTargetText;
+            setTargetSelections((targetPrev) =>
+              targetPrev.filter(
+                (t) =>
+                  t.text !== linkedTargetText || t.category !== "Mistranslation"
+              )
+            );
+          }
+          return prev.filter((_, i) => i !== matchIndex); // Deselect
+        }
 
-  //       // Prevent overlapping selections
-  //       const overlaps = prev.some(
-  //         ({ start: sStart, end: sEnd }) => start < sEnd && end > sStart
-  //       );
-  //       if (overlaps) return prev;
+        // Prevent overlapping selections
+        const overlaps = prev.some(
+          ({ start: sStart, end: sEnd }) => start < sEnd && end > sStart
+        );
+        if (overlaps) return prev;
 
-  //       // Add new selection
-  //       return [...prev, { text: selectedText, category, start, end }];
-  //     });
+        // Add new selection
+        return [...prev, { text: selectedText, category, start, end }];
+      });
 
-  //     selection.removeAllRanges();
-  //   } catch (err) {
-  //     console.error("Error during text selection:", err);
-  //     window.getSelection()?.removeAllRanges();
-  //   }
-  // };
+      selection.removeAllRanges();
+    } catch (err) {
+      console.error("Error during text selection:", err);
+      window.getSelection()?.removeAllRanges();
+    }
+  };
 
   // const handleCategoryConfirm = (cat) => {
   //   if (!pendingTargetText) return;
@@ -640,93 +640,93 @@ const Annotation = () => {
   //   setPendingTargetText("");
   //   setShowCategoryOptions(false);
   // };
-  const handleSelection = (
-    setSelections,
-    text,
-    category = null,
-    ref = null
-  ) => {
-    try {
-      const selection = window.getSelection();
-      if (!selection || selection.rangeCount === 0) return;
+  // const handleSelection = (
+  //   setSelections,
+  //   text,
+  //   category = null,
+  //   ref = null
+  // ) => {
+  //   try {
+  //     const selection = window.getSelection();
+  //     if (!selection || selection.rangeCount === 0) return;
 
-      const selectedText = selection.toString().trim();
-      if (!selectedText || !ref?.current?.textContent?.includes(selectedText)) {
-        selection.removeAllRanges();
-        return;
-      }
+  //     const selectedText = selection.toString().trim();
+  //     if (!selectedText || !ref?.current?.textContent?.includes(selectedText)) {
+  //       selection.removeAllRanges();
+  //       return;
+  //     }
 
-      const range = selection.getRangeAt(0);
-      const preRange = document.createRange();
-      preRange.selectNodeContents(ref.current);
-      preRange.setEnd(range.startContainer, range.startOffset);
-      const approxStart = preRange.toString().length;
+  //     const range = selection.getRangeAt(0);
+  //     const preRange = document.createRange();
+  //     preRange.selectNodeContents(ref.current);
+  //     preRange.setEnd(range.startContainer, range.startOffset);
+  //     const approxStart = preRange.toString().length;
 
-      const content = ref.current.textContent;
-      const occurrences = [];
-      let idx = content.indexOf(selectedText);
-      while (idx !== -1) {
-        occurrences.push(idx);
-        idx = content.indexOf(selectedText, idx + 1);
-      }
+  //     const content = ref.current.textContent;
+  //     const occurrences = [];
+  //     let idx = content.indexOf(selectedText);
+  //     while (idx !== -1) {
+  //       occurrences.push(idx);
+  //       idx = content.indexOf(selectedText, idx + 1);
+  //     }
 
-      if (occurrences.length === 0) {
-        selection.removeAllRanges();
-        return;
-      }
+  //     if (occurrences.length === 0) {
+  //       selection.removeAllRanges();
+  //       return;
+  //     }
 
-      const start = occurrences.reduce((prev, curr) =>
-        Math.abs(curr - approxStart) < Math.abs(prev - approxStart)
-          ? curr
-          : prev
-      );
-      const end = start + selectedText.length;
+  //     const start = occurrences.reduce((prev, curr) =>
+  //       Math.abs(curr - approxStart) < Math.abs(prev - approxStart)
+  //         ? curr
+  //         : prev
+  //     );
+  //     const end = start + selectedText.length;
 
-      if (start < 0 || end > content.length) {
-        selection.removeAllRanges();
-        return;
-      }
+  //     if (start < 0 || end > content.length) {
+  //       selection.removeAllRanges();
+  //       return;
+  //     }
 
-      if (setSelections === setTargetSelections) {
-        setPendingTargetText(selectedText);
-        setPendingTargetRange({ start, end }); // ✅ Store exact range
-        setShowCategoryOptions(true);
-        const rect = range.getBoundingClientRect();
-        setSelectionPosition({
-          top: rect.bottom + window.scrollY + 10,
-          left: rect.left + window.scrollX,
-        });
-        selection.removeAllRanges();
-        return;
-      }
+  //     if (setSelections === setTargetSelections) {
+  //       setPendingTargetText(selectedText);
+  //       setPendingTargetRange({ start, end }); // ✅ Store exact range
+  //       setShowCategoryOptions(true);
+  //       const rect = range.getBoundingClientRect();
+  //       setSelectionPosition({
+  //         top: rect.bottom + window.scrollY + 10,
+  //         left: rect.left + window.scrollX,
+  //       });
+  //       selection.removeAllRanges();
+  //       return;
+  //     }
 
-      setSelections((prev) => {
-        const matchIndex = prev.findIndex(
-          (s) =>
-            s.start === start &&
-            s.end === end &&
-            s.text === selectedText &&
-            s.category === category
-        );
+  //     setSelections((prev) => {
+  //       const matchIndex = prev.findIndex(
+  //         (s) =>
+  //           s.start === start &&
+  //           s.end === end &&
+  //           s.text === selectedText &&
+  //           s.category === category
+  //       );
 
-        if (matchIndex !== -1) {
-          return prev.filter((_, i) => i !== matchIndex);
-        }
+  //       if (matchIndex !== -1) {
+  //         return prev.filter((_, i) => i !== matchIndex);
+  //       }
 
-        const overlaps = prev.some(
-          ({ start: sStart, end: sEnd }) => start < sEnd && end > sStart
-        );
-        if (overlaps) return prev;
+  //       const overlaps = prev.some(
+  //         ({ start: sStart, end: sEnd }) => start < sEnd && end > sStart
+  //       );
+  //       if (overlaps) return prev;
 
-        return [...prev, { text: selectedText, category, start, end }];
-      });
+  //       return [...prev, { text: selectedText, category, start, end }];
+  //     });
 
-      selection.removeAllRanges();
-    } catch (err) {
-      console.error("Error during text selection:", err);
-      window.getSelection()?.removeAllRanges();
-    }
-  };
+  //     selection.removeAllRanges();
+  //   } catch (err) {
+  //     console.error("Error during text selection:", err);
+  //     window.getSelection()?.removeAllRanges();
+  //   }
+  // };
   const handleCategoryConfirm = (cat) => {
     if (!pendingTargetText || !pendingTargetRange) return;
     const { start, end } = pendingTargetRange;

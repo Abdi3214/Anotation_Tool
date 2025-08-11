@@ -73,7 +73,7 @@ const Annotation = () => {
       try {
         const token = localStorage.getItem("token");
         const res = await fetch(
-          `https://anotationtool-production.up.railway.app/api/annotation/Allannotation`,
+          `http://localhost:5000/api/annotation/Allannotation`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -100,7 +100,7 @@ const Annotation = () => {
   useEffect(() => {
     const fetchItems = async () => {
       try {
-        const res = await fetch("https://anotationtool-production.up.railway.app/api/data/annotation");
+        const res = await fetch("http://localhost:5000/api/data/annotation");
         if (!res.ok) throw new Error("Network error");
 
         const data = await res.json();
@@ -145,7 +145,7 @@ const Annotation = () => {
       const token = localStorage.getItem("token");
 
       try {
-        const res = await fetch("https://anotationtool-production.up.railway.app/api/progress", {
+        const res = await fetch("http://localhost:5000/api/progress", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -224,7 +224,7 @@ const Annotation = () => {
 
       // 2) Save annotation to backend
       const res = await fetch(
-        "https://anotationtool-production.up.railway.app/api/annotation/Addannotation",
+        "http://localhost:5000/api/annotation/Addannotation",
         {
           method: "POST",
           headers: {
@@ -265,7 +265,7 @@ const Annotation = () => {
         setCurrentIndex(next);
 
         // 7) Persist progress to backend
-        await fetch("https://anotationtool-production.up.railway.app/api/progress", {
+        await fetch("http://localhost:5000/api/progress", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -307,7 +307,7 @@ const Annotation = () => {
         return;
       }
 
-      const res = await fetch("https://anotationtool-production.up.railway.app/api/annotation/skip", {
+      const res = await fetch("http://localhost:5000/api/annotation/skip", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -333,7 +333,7 @@ const Annotation = () => {
       if (next !== null) {
         setCurrentIndex(next);
 
-        const progressRes = await fetch("https://anotationtool-production.up.railway.app/api/progress", {
+        const progressRes = await fetch("http://localhost:5000/api/progress", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
