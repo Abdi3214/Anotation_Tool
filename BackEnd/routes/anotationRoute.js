@@ -1,4 +1,3 @@
-// ====== routes/anotationRoute.js (Back‑End) ======
 const express = require("express");
 
 const mongoose = require("mongoose");
@@ -11,7 +10,7 @@ const User = require("../models/usersModel");
 router.get("/export", authenticateToken, async (req, res) => {
   try {
     const { format = "csv" } = req.query;
-    
+
     const Annotator_Email = req.user.email;
     const annotations = await Annotation.find();
 
@@ -62,9 +61,7 @@ router.get("/export", authenticateToken, async (req, res) => {
         { header: "Target_Issue", key: "Target_Issue", width: 100 },
       ];
 
-      worksheet.addRows(
-        annotations.map((a) => a.toObject(), Annotator_Email)
-      );
+      worksheet.addRows(annotations.map((a) => a.toObject(), Annotator_Email));
 
       res.setHeader(
         "Content-Type",
@@ -199,35 +196,105 @@ router.get("/mycount", authenticateToken, async (req, res) => {
     res.status(500).json({ message: "Failed to count your annotations" });
   }
 });
-router.get('/assigned/:annotatorId', async (req, res) => {
-  const { annotatorId } = req.params;
-
+router.get("/Allassigned", authenticateToken, async (req, res) => {
   try {
-    const annotations = await Annotation.find({ Annotator_ID: annotatorId });
+    let annotations;
+    const { annotatorId } = req.query;
 
-    const formatted = annotations.map(a => ({
+    if (req.user.userType === "Admin") {
+      annotations = annotatorId
+        ? await Annotation.find({ Annotator_ID: parseInt(annotatorId) })
+        : await Annotation.find({});
+    } else {
+      annotations = await Annotation.find({
+        Annotator_ID: req.user.Annotator_ID,
+      });
+    }
+
+    // Format for frontend
+    const formatted = annotations.map((a) => ({
       _id: a._id,
       id: a.Annotation_ID,
+      email: a.Annotator_Email,
       source: a.Src_Text,
-      due: a.createdAt?.toISOString().split('T')[0] || 'N/A',
-      status: a.Skipped ? 'Skipped' : a.reviewed ? 'Completed' : 'In Progress'
+      due: a.createdAt?.toISOString().split("T")[0] || "N/A",
+      status: a.reviewed ? "Completed" : a.Skipped ? "Skipped" : "In Progress",
     }));
 
     res.json(formatted);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to fetch assigned texts' });
+    res.status(500).json({ error: "Failed to fetch assigned annotations" });
   }
 });
 
-// Create a new annotation
-// routes/anotationRoute.js
+// router.post("/Addannotation", authenticateToken, async (req, res) => {
+//   try {
+//     const {
+//       Annotation_ID,
+//       Comment,
+//       Src_Text,
+//       Src_lang,
+//       Target_lang,
+//       Score,
+//       Omission,
+//       Addition,
+//       Mistranslation,
+//       Untranslation,
+//       Src_Issue,
+//       Target_Issue,
+//     } = req.body;
+
+//     const Annotator_ID = req.user.Annotator_ID; // from token
+//     const Annotator_Email = req.user.email;
+
+//     if (!Src_Text) {
+//       return res.status(400).json({ message: "Src_Text is required" });
+//     }
+
+//     const updatedAnnotation = await Annotation.findOneAndUpdate(
+//       { Annotator_ID, Src_Text }, // search by Annotator + text
+//       {
+//         $set: {
+//           Annotation_ID: Annotation_ID || undefined, // keep existing or generate later
+//           Annotator_Email,
+//           Src_lang,
+//           Target_lang,
+//           Comment,
+//           Score,
+//           Omission,
+//           Addition,
+//           Mistranslation,
+//           Untranslation,
+//           Src_Issue,
+//           Target_Issue,
+//           reviewed: true,
+//           Skipped: false,
+//         },
+//       },
+//       {
+//         new: true,  // return updated document
+//         upsert: true, // insert if not exists
+//       }
+//     );
+
+//     return res.status(200).json({
+//       message: "Annotation saved successfully",
+//       annotation: updatedAnnotation,
+//     });
+//   } catch (err) {
+//     console.error("POST /Addannotation error:", err);
+//     res.status(500).json({ message: err.message });
+//   }
+// });
+
 
 router.post("/Addannotation", authenticateToken, async (req, res) => {
   try {
     const {
       Comment,
       Src_Text,
+      Target_Text,
       Src_lang,
       Target_lang,
       Score,
@@ -237,28 +304,49 @@ router.post("/Addannotation", authenticateToken, async (req, res) => {
       Untranslation,
       Src_Issue,
       Target_Issue,
-      Annotation_ID
     } = req.body;
 
-    const userId = req.user.Annotator_ID; // From token
-    const userEmail = req.user.email; // Include email in your JWT at login
+    const Annotator_ID = req.user.Annotator_ID;
+    const Annotator_Email = req.user.email;
 
-    // Check for duplicates
-    const existing = await Annotation.findOne({
-      Annotator_ID: userId,
-      Annotation_ID
-    });
-
-    if (existing) {
-      return res
-        .status(409)
-        .json({ message: "Annotation already exists for this text and user" });
+    if (!Src_Text || !Target_Text) {
+      return res.status(400).json({ message: "Missing required fields" });
     }
 
-    const newAnnotation = new Annotation({
-      Annotator_ID: userId,
-      Annotator_Email: userEmail,
+    //  First, check if an annotation already exists with same Annotator_ID and Src_Text
+    let annotation = await Annotation.findOne({ Annotator_ID, Src_Text });
+
+    if (annotation) {
+      // Update existing annotation
+      annotation.Target_Text = Target_Text;
+      annotation.Src_lang = Src_lang;
+      annotation.Target_lang = Target_lang;
+      annotation.Comment = Comment;
+      annotation.Score = Score;
+      annotation.Omission = Omission;
+      annotation.Addition = Addition;
+      annotation.Mistranslation = Mistranslation;
+      annotation.Untranslation = Untranslation;
+      annotation.Src_Issue = Src_Issue;
+      annotation.Target_Issue = Target_Issue;
+      annotation.reviewed = true;
+      annotation.Skipped = false;
+
+      await annotation.save();
+
+      return res.status(200).json({
+        message: "Annotation updated",
+        annotation,
+      });
+    }
+
+   
+
+    annotation = new Annotation({
+      Annotator_ID,
+      Annotator_Email,
       Src_Text,
+      Target_Text,
       Src_lang,
       Target_lang,
       Comment,
@@ -270,50 +358,61 @@ router.post("/Addannotation", authenticateToken, async (req, res) => {
       Src_Issue,
       Target_Issue,
       reviewed: true,
+      Skipped: false,
     });
 
-    await newAnnotation.save();
-    res.status(201).json(newAnnotation);
+    await annotation.save();
+
+    return res.status(201).json({
+      message: "Annotation created",
+      annotation,
+    });
   } catch (err) {
-    console.error("POST /rebortAnnotation error:", err);
+    console.error("POST /Addannotation error:", err);
     res.status(500).json({ message: err.message });
   }
 });
-// Skip annotation
+
+
+
+
+
+
 router.post("/skip", authenticateToken, async (req, res) => {
-  const { Src_Text } = req.body;
-  const Annotator_ID = req.user.Annotator_ID;
-  const Annotator_Email = req.user.email;
-
-  if (!Src_Text || !Annotator_ID) {
-    return res.status(400).json({ message: "Missing required fields" });
-  }
-
   try {
-    let annotation = await Annotation.findOne({ Annotator_ID, Src_Text });
+    const { Src_Text } = req.body;
+    const Annotator_ID = req.user.Annotator_ID;
+    const Annotator_Email = req.user.email;
 
-    if (annotation) {
-      annotation.Skipped = true;
-      await annotation.save();
-    } else {
-      annotation = new Annotation({
-        Annotator_ID,
-        Annotator_Email,
-        Src_Text,
-        Score: 0,
-        Omission: 0,
-        Addition: 0,
-        Mistranslation: 0,
-        Untranslation: 0,
-        Src_Issue: "",
-        Target_Issue: "",
-        Skipped: true,
-        reviewed: false,
-      });
-      await annotation.save();
+    if (!Src_Text || !Annotator_ID) {
+      return res.status(400).json({ message: "Missing required fields" });
     }
 
-    res.status(200).json({ message: "Annotation marked as skipped" });
+    // Upsert annotation safely
+    const annotation = await Annotation.findOneAndUpdate(
+      { Annotator_ID, Src_Text }, // find by annotator and source text
+      {
+        $set: {
+          Annotator_Email,
+          reviewed: false,
+          Skipped: true,
+        },
+        $setOnInsert: {
+          // only applied if a new doc is inserted
+          Annotation_ID: new mongoose.Types.ObjectId().toString(),
+        },
+      },
+      {
+        upsert: true,      // insert if not found
+        new: true,         // return the updated/new document
+        setDefaultsOnInsert: true,
+      }
+    );
+
+    res.status(200).json({
+      message: "Annotation marked as skipped",
+      annotation,
+    });
   } catch (err) {
     console.error("POST /skip error:", err);
     res.status(500).json({ message: "Failed to skip annotation" });
@@ -322,18 +421,51 @@ router.post("/skip", authenticateToken, async (req, res) => {
 
 
 // Update an annotation by ID
-router.put("/rebortAnnotation/:id", async (req, res) => {
-  const id = req.params.id;
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    return res.status(400).json({ message: "Invalid annotation ID format" });
-  }
-
+router.put("/rebortAnnotation/:id", authenticateToken, async (req, res) => {
   try {
-    const annotation = await Annotation.findByIdAndUpdate(id, req.body, {
-      new: true,
-    });
-    if (!annotation)
+    const id = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid annotation ID format" });
+    }
+
+    const {
+      Skipped,
+      Comment,
+      Score,
+      Omission,
+      Addition,
+      Mistranslation,
+      Untranslation,
+      Src_Issue,
+      Target_Issue,
+    } = req.body;
+
+    const annotation = await Annotation.findById(id);
+    if (!annotation) {
       return res.status(404).json({ message: "Annotation not found" });
+    }
+
+    // Update fields
+    if (Skipped) {
+      annotation.Skipped = true;
+      annotation.reviewed = false;
+    } else {
+      annotation.Skipped = false;
+      annotation.reviewed = true;
+    }
+
+    // Optional overwrite fields if provided
+    if (Comment !== undefined) annotation.Comment = Comment;
+    if (Score !== undefined) annotation.Score = Score;
+    if (Omission !== undefined) annotation.Omission = Omission;
+    if (Addition !== undefined) annotation.Addition = Addition;
+    if (Mistranslation !== undefined)
+      annotation.Mistranslation = Mistranslation;
+    if (Untranslation !== undefined) annotation.Untranslation = Untranslation;
+    if (Src_Issue !== undefined) annotation.Src_Issue = Src_Issue;
+    if (Target_Issue !== undefined) annotation.Target_Issue = Target_Issue;
+
+    await annotation.save();
     res.status(200).json(annotation);
   } catch (err) {
     console.error("PUT /rebortAnnotation/:id error:", err);
@@ -341,40 +473,4 @@ router.put("/rebortAnnotation/:id", async (req, res) => {
   }
 });
 
-// Delete an annotation by ID
-router.delete(
-  "/rebortAnnotationDelete/:id",
-  authenticateToken,
-  async (req, res) => {
-    try {
-      const annotation = await Annotation.findById(req.params.id);
-
-      if (!annotation)
-        return res.status(404).json({ message: "Annotation not found" });
-
-      // ✅ Optional: Ensure only owner can delete
-      if (annotation.Annotator_ID !== req.user.Annotator_ID) {
-        return res
-          .status(403)
-          .json({ message: "Unauthorized: Not your annotation" });
-      }
-
-      const deleted = await Annotation.findByIdAndDelete(req.params.id);
-      res.status(200).json(deleted);
-    } catch (err) {
-      console.error("DELETE /rebortAnnotation/:id error:", err);
-      res.status(500).json({ message: err.message });
-    }
-  }
-);
-
-// DELETE all annotations
-router.delete("/deleteAll", async (req, res) => {
-  try {
-    await Annotation.deleteMany({});
-    res.status(200).json({ message: "All annotations deleted" });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-module.exports = router; 
+module.exports = router;

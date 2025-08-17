@@ -3,9 +3,9 @@
 import {
   Download,
   LayoutDashboard,
-  LogOut,
   NotebookPen,
   SaveAll,
+  Upload,
   UserPen,
   UsersRound,
 } from "lucide-react";
@@ -23,12 +23,6 @@ export default function HomeLayout({ children }) {
 
   const toggleCollapsed = () => setCollapsed((c) => !c);
   const isActive = (href) => pathname === href;
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    router.push("/login");
-  };
 
   useEffect(() => {
     const currentUser = user || JSON.parse(localStorage.getItem("user"));
@@ -146,6 +140,18 @@ export default function HomeLayout({ children }) {
                     <UsersRound />
                     <span className="ml-3 hidden md:inline text-xl">Users</span>
                   </Link>
+                  <Link
+                    href="/home/batch"
+                    className={`flex items-center w-full p-2 hover:bg-gray-200 dark:hover:bg-gray-800 hover:rounded-md ${
+                      isActive("/home/annotation")
+                        ? "bg-gray-100 dark:bg-gray-900 rounded-md font-semibold"
+                        : ""
+                    }`}
+                    title="My Annotations"
+                  >
+                    <Upload />
+                    <span className="ml-3 hidden md:inline">Upload</span>
+                  </Link>
                 </>
               )}
 
@@ -172,6 +178,7 @@ export default function HomeLayout({ children }) {
                 title="Saved Annotations"
               >
                 <SaveAll />
+
                 <span className="ml-3 hidden md:inline">Saved Annotations</span>
               </Link>
 
@@ -202,16 +209,6 @@ export default function HomeLayout({ children }) {
                 <UserPen />
                 <span className="ml-3 hidden md:inline">Profile</span>
               </Link>
-
-              <button
-                onClick={handleLogout}
-                className="flex items-center w-full p-2 hover:bg-gray-200 dark:hover:bg-gray-800 hover:rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                title="Log Out"
-                aria-label="Log Out"
-              >
-                <LogOut />
-                <span className="ml-3 hidden md:inline">Log Out</span>
-              </button>
             </div>
 
             {/* Main Content */}

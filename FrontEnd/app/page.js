@@ -1,7 +1,5 @@
 "use client";
-import { Moon, Sun } from "lucide-react"; // ✅ Icon for toggle
 import Link from "next/link";
-import { useEffect, useState } from "react";
 
 function Home() {
   return (
@@ -24,7 +22,7 @@ function Home() {
               </p>
             </blockquote>
             <Link
-              href="/signup"
+              href="/login"
               className="inline-block bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 mt-4 rounded-full transition"
             >
               Get Started
@@ -38,15 +36,15 @@ function Home() {
         <div className="max-w-5xl mx-auto flex flex-col md:flex-row gap-10">
           {[
             {
-              title: "⭐ Intuitive Interface",
+              title: "Intuitive Interface",
               desc: "Review translations with checkboxes, ratings, and in-line comments.",
             },
             {
-              title: "🔍 Easy Navigation",
-              desc: "Move quickly through assigned texts with Save, Next, and Draft options.",
+              title: "Easy Navigation",
+              desc: "Move quickly through assigned texts with Save, Skip.",
             },
             {
-              title: "📦 Export Ready",
+              title: "Export Ready",
               desc: "Download all annotations for model feedback or academic analysis.",
             },
           ].map((feature, idx) => (
@@ -85,42 +83,9 @@ function Home() {
   );
 }
 
-export function useDarkMode() {
-  const [isDark, setIsDark] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
-
-  useEffect(() => {
-    const userTheme = localStorage.getItem("theme");
-
-    // Detect system preference if not set
-    const prefersDark = window.matchMedia(
-      "(prefers-color-scheme: dark)"
-    ).matches;
-    const dark = userTheme === "dark" || (!userTheme && prefersDark);
-
-    setIsDark(dark);
-    setHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    if (!hydrated) return;
-
-    if (isDark) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-
-    localStorage.setItem("theme", isDark ? "dark" : "light");
-  }, [isDark, hydrated]);
-
-  const toggle = () => setIsDark((prev) => !prev);
-
-  return [isDark, toggle];
-}
 
 export default function LandPage() {
-  const [isDark, toggleDark] = useDarkMode();
+
 
   return (
     <div className="min-h-screen flex flex-col bg-white dark:bg-[#0a0a0a] text-gray-800 dark:text-gray-100">
@@ -148,20 +113,11 @@ export default function LandPage() {
               How it Works
             </a>
             <Link
-              href="/signup"
+              href="/login"
               className="hover:text-blue-600 dark:hover:text-blue-400 transition"
             >
-              Sign Up
+              Sign In
             </Link>
-
-            {/* Dark Mode Toggle */}
-            <button
-              onClick={toggleDark}
-              className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition"
-              title="Toggle Theme"
-            >
-              {isDark ? <Sun size={20} /> : <Moon size={20} />}
-            </button>
           </nav>
         </div>
       </header>

@@ -37,7 +37,7 @@ export default function ExportData() {
 
     try {
       const res = await fetch(
-        `https://anotationtool-production.up.railway.app/api/annotation/export${query}`,
+        `https://anotationtool-production.up.railway.app/annotation/export${query}`,
         {
           method: "GET",
           headers: {

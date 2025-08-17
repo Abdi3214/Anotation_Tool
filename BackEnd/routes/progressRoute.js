@@ -4,7 +4,6 @@ const router = express.Router();
 const Progress = require("../models/progresModel");
 const { authenticateToken } = require("../utils/auth");
 
-// 1) Save progress
 router.post("/", authenticateToken, async (req, res) => {
   const { index } = req.body;
   try {
@@ -20,7 +19,7 @@ router.post("/", authenticateToken, async (req, res) => {
   }
 });
 
-// 2) Get progress
+
 router.get("/", authenticateToken, async (req, res) => {
   console.log("→ token says user:", req.user);
   try {

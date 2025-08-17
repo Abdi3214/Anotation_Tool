@@ -1,7 +1,6 @@
 "use client";
 import axios from "axios";
 import { Eye, EyeOff } from "lucide-react"; // 👁️ Import icons
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useStore } from "../../context/UserContext";
@@ -53,7 +52,7 @@ export default function Login() {
     <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-[#0a0a0a] px-4">
       <div className="bg-white dark:bg-gray-900 p-8 rounded-xl shadow-lg w-full max-w-sm">
         <h2 className="text-2xl font-bold text-center mb-6 text-gray-800 dark:text-white">
-          Login
+          Sign In
         </h2>
 
         {message && (
@@ -108,16 +107,6 @@ export default function Login() {
             {loading ? "Logging in..." : "Login"}
           </button>
         </form>
-
-        <div className="text-sm text-center mt-4 text-gray-600 dark:text-gray-400">
-          Don’t have an account?{" "}
-          <Link
-            href="/signup"
-            className="text-blue-600 dark:text-blue-400 hover:underline"
-          >
-            Sign Up
-          </Link>
-        </div>
       </div>
     </div>
   );

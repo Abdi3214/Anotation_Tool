@@ -80,15 +80,6 @@ const Annotation = () => {
             },
           }
         );
-        if (!res.ok) {
-          console.error("HTTP Error:", res.status, res.statusText);
-          console.error(await res.text()); // Logs HTML
-          return;
-        }
-        if (!res.headers.get("content-type")?.includes("application/json")) {
-          console.error("Expected JSON but got:", await res.text());
-          return;
-        }
         const saved = await res.json();
         if (!Array.isArray(saved)) {
           console.error("Expected an array but got:", saved);
@@ -109,24 +100,30 @@ const Annotation = () => {
   useEffect(() => {
     const fetchItems = async () => {
       try {
-        const res = await fetch(
-          "https://anotationtool-production.up.railway.app/api/data/annotation"
-        );
-        if (!res.ok) throw new Error("Network error");
+        const token = localStorage.getItem("token");
+        const res = await fetch(`https://anotationtool-production.up.railway.app/api/dataset/all`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(`Network error: ${res.status} - ${text}`);
+        }
 
         const data = await res.json();
+        console.log("API response:", data);
 
-        const mapped = data.map((post) => ({
-          id: post.id,
+        const mapped = (data || []).map((post) => ({
+          id: post._id,
           sourceText: post.english,
           targetText: post.somali,
         }));
-        console.log("Fetched items:", mapped);
-        console.log("Saved startId:", localStorage.getItem("startId"));
-        setItems(mapped); // ✅ Set first
+
+        setItems(mapped);
+        console.log("Mapped items:", mapped);
       } catch (err) {
         console.error("Annotation fetch error:", err);
-        setError(err);
+        setError(err.message);
       } finally {
         setLoading(false);
       }
@@ -134,6 +131,7 @@ const Annotation = () => {
 
     fetchItems();
   }, []);
+
   useEffect(() => {
     const savedSource = localStorage.getItem("startSrc");
     if (items.length > 0 && savedSource) {
@@ -143,7 +141,7 @@ const Annotation = () => {
       console.log("Matching startSrc:", savedSource);
       console.log("Matched index:", idx);
       setCurrentIndex(idx !== -1 ? idx : 0);
-      setStartedFromAssignedPage(true); // ✅ Mark that we started manually
+      setStartedFromAssignedPage(true);
       localStorage.removeItem("startSrc");
       localStorage.removeItem("startedFromAssigned");
     }
@@ -151,7 +149,7 @@ const Annotation = () => {
 
   useEffect(() => {
     const fetchProgress = async () => {
-      if (startedFromAssignedPage) return; // ✅ Skip if started manually
+      if (startedFromAssignedPage) return; 
 
       const token = localStorage.getItem("token");
 
@@ -224,6 +222,7 @@ const Annotation = () => {
     const payload = {
       Comment: comment,
       Src_Text: sourceText,
+      Target_Text: targetText,
       Score: rating,
       Omission: counts.Omission,
       Addition: counts.Addition,

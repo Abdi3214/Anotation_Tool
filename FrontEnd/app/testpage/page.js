@@ -73,7 +73,7 @@ const Annotation = () => {
       try {
         const token = localStorage.getItem("token");
         const res = await fetch(
-          `http://localhost:5000/api/annotation/Allannotation`,
+          `https://anotationtool-production.up.railway.app/api/annotation/Allannotation`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -100,22 +100,30 @@ const Annotation = () => {
   useEffect(() => {
     const fetchItems = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/data/annotation");
-        if (!res.ok) throw new Error("Network error");
+        const token = localStorage.getItem("token");
+        const res = await fetch(`http://localhost:5000/api/dataset/my`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(`Network error: ${res.status} - ${text}`);
+        }
 
         const data = await res.json();
+        console.log("API response:", data);
 
-        const mapped = data.map((post) => ({
-          id: post.id,
+        const mapped = (data || []).map((post) => ({
+          id: post._id,
           sourceText: post.english,
           targetText: post.somali,
         }));
-        console.log("Fetched items:", mapped);
-        console.log("Saved startId:", localStorage.getItem("startId"));
-        setItems(mapped); // ✅ Set first
+
+        setItems(mapped);
+        console.log("Mapped items:", mapped);
       } catch (err) {
         console.error("Annotation fetch error:", err);
-        setError(err);
+        setError(err.message);
       } finally {
         setLoading(false);
       }
@@ -123,6 +131,7 @@ const Annotation = () => {
 
     fetchItems();
   }, []);
+
   useEffect(() => {
     const savedSource = localStorage.getItem("startSrc");
     if (items.length > 0 && savedSource) {
@@ -145,11 +154,14 @@ const Annotation = () => {
       const token = localStorage.getItem("token");
 
       try {
-        const res = await fetch("http://localhost:5000/api/progress", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const res = await fetch(
+          "https://anotationtool-production.up.railway.app/api/progress",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
         const data = await res.json();
         if (data.index !== undefined && !isNaN(data.index)) {
@@ -224,7 +236,7 @@ const Annotation = () => {
 
       // 2) Save annotation to backend
       const res = await fetch(
-        "http://localhost:5000/api/annotation/Addannotation",
+        "https://anotationtool-production.up.railway.app/api/annotation/Addannotation",
         {
           method: "POST",
           headers: {
@@ -265,14 +277,17 @@ const Annotation = () => {
         setCurrentIndex(next);
 
         // 7) Persist progress to backend
-        await fetch("http://localhost:5000/api/progress", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ index: next }),
-        });
+        await fetch(
+          "https://anotationtool-production.up.railway.app/api/progress",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ index: next }),
+          }
+        );
       } else {
         alert("🎉 You've completed all annotations!");
       }
@@ -307,14 +322,17 @@ const Annotation = () => {
         return;
       }
 
-      const res = await fetch("http://localhost:5000/api/annotation/skip", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ Src_Text }),
-      });
+      const res = await fetch(
+        "https://anotationtool-production.up.railway.app/api/annotation/skip",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ Src_Text }),
+        }
+      );
 
       if (!res.ok) {
         const text = await res.text();
@@ -333,14 +351,17 @@ const Annotation = () => {
       if (next !== null) {
         setCurrentIndex(next);
 
-        const progressRes = await fetch("http://localhost:5000/api/progress", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ index: next }),
-        });
+        const progressRes = await fetch(
+          "https://anotationtool-production.up.railway.app/api/progress",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ index: next }),
+          }
+        );
 
         if (!progressRes.ok) {
           console.warn("Failed to save skip progress.");

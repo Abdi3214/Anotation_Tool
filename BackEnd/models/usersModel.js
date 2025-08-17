@@ -3,20 +3,22 @@ const mongoose = require("mongoose");
 const usersSchema = new mongoose.Schema(
   {
     Annotator_ID: { type: Number, unique: true },
-    name: { type: String, required: true, unique: true }, // 👈 Add unique: true here
+    name: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     userType: { type: String, default: "annotator" },
+    isActive: { type: Boolean, default: true }
   },
   { versionKey: false, timestamps: true }
 );
 
-// Generate random number and ensure it's unique
+
+
 usersSchema.pre("save", async function (next) {
   if (!this.Annotator_ID) {
     let isUnique = false;
     while (!isUnique) {
-      const randomId = Math.floor(100 + Math.random() * 300); // 4-digit random number
+      const randomId = Math.floor(100 + Math.random() * 300); 
       const existingUser = await mongoose.models.User.findOne({
         Annotator_ID: randomId,
       });
