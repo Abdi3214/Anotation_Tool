@@ -7,7 +7,6 @@ const fs = require("fs");
 const csv = require("csv-parser");
 const xlsx = require("xlsx");
 
-// Parse rows from a file (CSV/XLSX) and enforce two columns: english & somali
 const readRows = async (absPath) => {
   const ext = path.extname(absPath).toLowerCase();
   const requiredHeaders = ["english", "somali"];
@@ -15,27 +14,21 @@ const readRows = async (absPath) => {
   if (ext === ".csv") {
     return new Promise((resolve, reject) => {
       const rows = [];
-      let validated = false;
 
       fs.createReadStream(absPath)
         .pipe(csv())
         .on("headers", (headers) => {
           const lower = headers.map(h => h.toLowerCase().trim());
-          if (
-            lower.length !== requiredHeaders.length ||
-            !requiredHeaders.every((h, i) => lower[i] === h)
-          ) {
-            return reject(
-              new Error("CSV must contain exactly two headers: english, somali")
-            );
+          if (!requiredHeaders.every(h => lower.includes(h))) {
+            return reject(new Error("CSV must contain 'english' and 'somali' columns"));
           }
-          validated = true;
         })
-        .on("data", (row) => rows.push(row))
-        .on("end", () => {
-          if (!validated) return reject(new Error("CSV validation failed"));
-          resolve(rows);
+        .on("data", (row) => {
+          const english = row["english"] || row["English"] || "";
+          const somali = row["somali"] || row["Somali"] || "";
+          rows.push({ english, somali });
         })
+        .on("end", () => resolve(rows))
         .on("error", reject);
     });
   }
@@ -48,18 +41,19 @@ const readRows = async (absPath) => {
     if (!rows.length) throw new Error("XLSX is empty");
 
     const headers = Object.keys(rows[0]).map(h => h.toLowerCase().trim());
-    if (
-      headers.length !== requiredHeaders.length ||
-      !requiredHeaders.every((h, i) => headers[i] === h)
-    ) {
-      throw new Error("XLSX must contain exactly two headers: english, somali");
+    if (!requiredHeaders.every(h => headers.includes(h))) {
+      throw new Error("XLSX must contain 'english' and 'somali' columns");
     }
 
-    return rows;
+    return rows.map(row => ({
+      english: row["english"] || row["English"] || "",
+      somali: row["somali"] || row["Somali"] || ""
+    }));
   }
 
   throw new Error("Unsupported file format");
 };
+
 
 /**
  * POST /api/batches/upload-multiple
@@ -192,9 +186,56 @@ const assignedByFile = async (req, res) => {
   }
 };
 
+/**
+ * POST /api/batches/unassign
+ * Body: { batchId, assignments: [{ userId, fileNames: [...] }] }
+ */
+const unassignBatch = async (req, res) => {
+  try {
+    const { batchId, assignments } = req.body;
+    if (!batchId || !Array.isArray(assignments) || !assignments.length)
+      return res.status(400).json({ error: "batchId and assignments are required" });
+
+    const batch = await Batch.findById(batchId);
+    if (!batch) return res.status(404).json({ error: "Batch not found" });
+
+    let modified = 0;
+
+    for (const a of assignments) {
+      const { userId, fileNames } = a || {};
+      if (!userId) continue;
+
+      // if fileNames is not provided, unassign the user from the whole batch
+      if (!Array.isArray(fileNames) || fileNames.length === 0) {
+        const result = await Dataset.updateMany(
+          { batch: batchId, assignedTo: userId },
+          { $pull: { assignedTo: userId } }
+        );
+        modified += (result.modifiedCount || result.nModified || 0);
+        continue;
+      }
+
+      // Otherwise unassign user from listed files only
+      for (const fileName of fileNames) {
+        const ids = (await Dataset.find({ batch: batchId, fileName }).select("_id")).map(d => d._id);
+        if (!ids.length) continue;
+        const result = await Dataset.updateMany({ _id: { $in: ids } }, { $pull: { assignedTo: userId } });
+        modified += (result.modifiedCount || result.nModified || 0);
+      }
+    }
+
+    res.json({ message: "Unassignment complete", modified });
+  } catch (err) {
+    console.error("unassignBatch error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+
 module.exports = {
   uploadMultiple,
   assignBatch,
   annotatorsList,
   assignedByFile,
+  unassignBatch
 };

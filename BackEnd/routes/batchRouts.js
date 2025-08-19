@@ -7,6 +7,7 @@ const {
   assignBatch,
   annotatorsList,
   assignedByFile,
+  unassignBatch
 } = require("../controller/batchController");
 
 const { authenticateToken, authorizeRoles } = require("../utils/auth");
@@ -28,5 +29,7 @@ router.get("/annotators", authenticateToken, authorizeRoles("Admin"), annotators
 
 // Assigned map by file
 router.get("/assigned/:batchId", authenticateToken, authorizeRoles("Admin"), assignedByFile);
+// Unassign users from files (Admin only)
+router.post("/unassign", authenticateToken, authorizeRoles("Admin"), unassignBatch);
 
 module.exports = router;

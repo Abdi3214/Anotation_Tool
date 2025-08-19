@@ -1,24 +1,39 @@
 const express = require("express");
-
 const mongoose = require("mongoose");
 const Annotation = require("../models/annotationModel");
 const router = express.Router();
 const { Parser } = require("json2csv");
 const ExcelJS = require("exceljs");
 const { authenticateToken } = require("../utils/auth");
-const User = require("../models/usersModel");
+
 router.get("/export", authenticateToken, async (req, res) => {
   try {
-    const { format = "csv" } = req.query;
+    const { format = "csv", start, end } = req.query;
 
-    const Annotator_Email = req.user.email;
-    const annotations = await Annotation.find();
+    // ---- NOTE: removed per-user email filter so this returns all annotations ----
+    // If you need to restore per-user exports later, add:
+    // query.Annotator_Email = req.user.email;
+    let query = {};
 
-    if (!annotations || annotations.length === 0) {
-      return res.status(400).json({ message: "No data to export" });
+    // keep date filtering if provided
+    if (start && end) {
+      query.createdAt = {
+        $gte: new Date(`${start}T00:00:00`),
+        $lte: new Date(`${end}T23:59:59`),
+      };
     }
 
-    if (format === "csv") {
+    // fetch annotations (all users unless date-filtered)
+    const annotations = await Annotation.find(query);
+
+    if (!annotations || annotations.length === 0) {
+      return res.status(404).json({
+        message: "No annotations found for the selected date range",
+      });
+    }
+
+    // CSV export (same as your original)
+    if (format.toLowerCase() === "csv") {
       const fields = [
         "Annotator_ID",
         "Annotator_Email",
@@ -42,26 +57,27 @@ router.get("/export", authenticateToken, async (req, res) => {
       return res.send(csv);
     }
 
-    if (format === "xlsx") {
+    // XLSX export
+    if (format.toLowerCase() === "xlsx") {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet("Annotations");
       worksheet.columns = [
         { header: "Annotator_ID", key: "Annotator_ID", width: 15 },
-        { header: "Annotator_Email", key: "Annotator_Email", width: 15 },
-        { header: "Annotation_ID", key: "Annotation_ID", width: 15 },
+        { header: "Annotator_Email", key: "Annotator_Email", width: 25 },
+        { header: "Annotation_ID", key: "Annotation_ID", width: 20 },
         { header: "Comment", key: "Comment", width: 30 },
-        { header: "Src_lang", key: "Src_lang", width: 100 },
-        { header: "Target_lang", key: "Target_lang", width: 100 },
+        { header: "Src_lang", key: "Src_lang", width: 50 },
+        { header: "Target_lang", key: "Target_lang", width: 50 },
         { header: "Score", key: "Score", width: 10 },
         { header: "Omission", key: "Omission", width: 10 },
         { header: "Addition", key: "Addition", width: 10 },
-        { header: "Mistranslation", key: "Mistranslation", width: 10 },
-        { header: "Untranslation", key: "Untranslation", width: 10 },
-        { header: "Src_Issue", key: "Src_Issue", width: 100 },
-        { header: "Target_Issue", key: "Target_Issue", width: 100 },
+        { header: "Mistranslation", key: "Mistranslation", width: 15 },
+        { header: "Untranslation", key: "Untranslation", width: 15 },
+        { header: "Src_Issue", key: "Src_Issue", width: 50 },
+        { header: "Target_Issue", key: "Target_Issue", width: 50 },
       ];
 
-      worksheet.addRows(annotations.map((a) => a.toObject(), Annotator_Email));
+      worksheet.addRows(annotations.map((a) => a.toObject()));
 
       res.setHeader(
         "Content-Type",
@@ -76,7 +92,8 @@ router.get("/export", authenticateToken, async (req, res) => {
       return res.end();
     }
 
-    if (format === "json") {
+    // JSON export
+    if (format.toLowerCase() === "json") {
       res.header("Content-Type", "application/json");
       res.attachment("annotations.json");
       return res.send(JSON.stringify(annotations, null, 2));
@@ -288,7 +305,6 @@ router.get("/Allassigned", authenticateToken, async (req, res) => {
 //   }
 // });
 
-
 router.post("/Addannotation", authenticateToken, async (req, res) => {
   try {
     const {
@@ -340,8 +356,6 @@ router.post("/Addannotation", authenticateToken, async (req, res) => {
       });
     }
 
-   
-
     annotation = new Annotation({
       Annotator_ID,
       Annotator_Email,
@@ -373,11 +387,6 @@ router.post("/Addannotation", authenticateToken, async (req, res) => {
   }
 });
 
-
-
-
-
-
 router.post("/skip", authenticateToken, async (req, res) => {
   try {
     const { Src_Text } = req.body;
@@ -403,8 +412,8 @@ router.post("/skip", authenticateToken, async (req, res) => {
         },
       },
       {
-        upsert: true,      // insert if not found
-        new: true,         // return the updated/new document
+        upsert: true, // insert if not found
+        new: true, // return the updated/new document
         setDefaultsOnInsert: true,
       }
     );
@@ -418,7 +427,6 @@ router.post("/skip", authenticateToken, async (req, res) => {
     res.status(500).json({ message: "Failed to skip annotation" });
   }
 });
-
 
 // Update an annotation by ID
 router.put("/rebortAnnotation/:id", authenticateToken, async (req, res) => {
